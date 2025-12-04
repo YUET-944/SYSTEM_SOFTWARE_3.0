@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using System.Windows;
 using UniversalBusinessSystem.ViewModels;
 
 namespace UniversalBusinessSystem.Views;
@@ -11,9 +12,7 @@ public partial class ModuleManagementView : UserControl
         // Resolve the ViewModel via DI so required services are injected
         try
         {
-            DataContext = Application.Current is UniversalBusinessSystem.App app
-                ? app.GetService<UniversalBusinessSystem.ViewModels.ModuleManagementViewModel>()
-                : UniversalBusinessSystem.App.GetService<UniversalBusinessSystem.ViewModels.ModuleManagementViewModel>();
+            DataContext = App.GetService<ModuleManagementViewModel>();
         }
         catch
         {
