@@ -21,6 +21,10 @@ public class User
     [MaxLength(255)]
     public string PasswordHash { get; set; } = string.Empty;
     
+    [Required]
+    [MaxLength(255)]
+    public string PasswordSalt { get; set; } = string.Empty;
+    
     [MaxLength(100)]
     public string? FirstName { get; set; }
     
