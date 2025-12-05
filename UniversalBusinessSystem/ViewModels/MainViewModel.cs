@@ -52,7 +52,7 @@ public partial class MainViewModel : ObservableObject
         _moduleRegistry = moduleRegistry;
         _serviceProvider = serviceProvider;
         
-        InitializeAsync();
+        _ = InitializeAsync();
     }
 
     private async Task InitializeAsync()
@@ -259,6 +259,38 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusMessage = $"Failed to load user management: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void NavigateToRegistration()
+    {
+        try
+        {
+            var registrationWindow = new RegistrationWindow();
+            registrationWindow.Owner = Application.Current.MainWindow;
+            registrationWindow.ShowDialog();
+            StatusMessage = "Registration window opened";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to open registration: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void NavigateToMigration()
+    {
+        try
+        {
+            var migrationWindow = new MigrationWindow();
+            migrationWindow.Owner = Application.Current.MainWindow;
+            migrationWindow.ShowDialog();
+            StatusMessage = "Database migration window opened";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to open migration: {ex.Message}";
         }
     }
 }

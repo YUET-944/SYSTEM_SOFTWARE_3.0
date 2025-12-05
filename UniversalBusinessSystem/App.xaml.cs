@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Configuration;
 using System.Windows;
 using Serilog;
 using MaterialDesignThemes.Wpf;
@@ -49,9 +51,33 @@ public partial class App : Application
                     // Settings
                     services.AddSingleton(appSettings);
 
-                    // Database
-                    services.AddDbContext<UniversalBusinessSystemDbContext>(options =>
-                        options.UseSqlite(appSettings.Database.ConnectionString));
+                    // Database - Support both SQLite and PostgreSQL
+                    services.AddDbContext<UniversalBusinessSystemDbContext>((serviceProvider, options) =>
+                    {
+                        var configuration = serviceProvider.GetService<IConfiguration>();
+                        var provider = configuration?["Database:Provider"] ?? "SQLite";
+                        var connectionString = configuration?[$"Database:ConnectionStrings:{provider}"];
+                        
+                        switch (provider.ToLower())
+                        {
+                            case "postgresql":
+                                options.UseNpgsql(connectionString);
+                                break;
+                            case "sqlite":
+                            default:
+                                options.UseSqlite(connectionString);
+                                break;
+                        }
+                    });
+
+                    // Configuration
+                    services.AddSingleton<IConfiguration>(context =>
+                    {
+                        var builder = new ConfigurationBuilder()
+                            .SetBasePath(Directory.GetCurrentDirectory())
+                            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                        return builder.Build();
+                    });
 
                     // Core Services
                     services.AddSingleton<IAuthenticationService, AuthenticationService>();
@@ -61,6 +87,9 @@ public partial class App : Application
                     services.AddScoped<IInventoryService, InventoryService>();
                     services.AddSingleton<Services.DatabaseService>();
                     services.AddSingleton<ShopTypeService>();
+                    
+                    // Migration Services
+                    services.AddSingleton<IDatabaseMigrationService, DatabaseMigrationService>();
                     
                     // New Authentication Services
                     services.AddSingleton<IAuthService, AuthService>();

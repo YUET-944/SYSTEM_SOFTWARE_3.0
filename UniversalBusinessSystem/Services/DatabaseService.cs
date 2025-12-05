@@ -109,7 +109,7 @@ public class DatabaseService
     private async Task AddOrganizationModulesAsync(UniversalBusinessSystemDbContext context, Guid organizationId, ShopType shopType)
     {
         // Get modules from shop type's default modules
-        var defaultModuleIds = ParseJsonGuidList(shopType.DefaultModules);
+        var defaultModuleIds = ParseJsonGuidList(shopType.DefaultModules ?? string.Empty);
         
         foreach (var moduleId in defaultModuleIds)
         {
