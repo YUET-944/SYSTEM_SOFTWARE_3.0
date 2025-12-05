@@ -100,7 +100,53 @@
                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
                                 ItemsSource="{Binding ShopTypes}"
                                 SelectedItem="{Binding SelectedShopType}"
-                                DisplayMemberPath="Name"/>
+                                DisplayMemberPath="Name"
+                                SelectionChanged="ShopTypeComboBox_SelectionChanged"/>
+                        
+                        <!-- Shop Configuration Display -->
+                        <Expander x:Name="ShopConfigExpander" 
+                                  Header="Shop Configuration" 
+                                  IsExpanded="True" 
+                                  Visibility="Collapsed"
+                                  Margin="0,10,0,0">
+                            <StackPanel>
+                                <!-- Units Section -->
+                                <TextBlock Text="Available Units:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <ItemsControl x:Name="UnitsList" Margin="10,0,0,10">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="Gray" BorderThickness="1" 
+                                                    CornerRadius="3" Margin="2" Padding="5">
+                                                <TextBlock Text="{Binding}" FontSize="12"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                
+                                <!-- Categories Section -->
+                                <TextBlock Text="Product Categories:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <ItemsControl x:Name="CategoriesList" Margin="10,0,0,0">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="Blue" BorderThickness="1" 
+                                                    CornerRadius="3" Margin="2" Padding="5">
+                                                <TextBlock Text="{Binding}" FontSize="12"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Expander>
                     </StackPanel>
                 </Expander>
 

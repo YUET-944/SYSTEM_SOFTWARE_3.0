@@ -6,17 +6,21 @@ using System.Reflection;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using System.Threading.Tasks;
+using UniversalBusinessSystem.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace UniversalBusinessSystem.Views;
 
 public partial class RegistrationWindow : Window
 {
     private RegistrationViewModel _viewModel;
+    private ShopTypeService _shopTypeService;
 
     public RegistrationWindow()
     {
         InitializeComponent();
         _viewModel = App.GetService<RegistrationViewModel>();
+        _shopTypeService = App.GetService<ShopTypeService>();
         DataContext = _viewModel;
 
         Debug.WriteLine($"[Registration] DataContext: {_viewModel.GetType().Name}");
@@ -154,5 +158,35 @@ public partial class RegistrationWindow : Window
         }
 
         MessageBox.Show("Diagnostics complete. Check Output window.", "Diagnostics", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private async void ShopTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_viewModel.SelectedShopType != null)
+        {
+            Debug.WriteLine($"[Registration] Shop type selected: {_viewModel.SelectedShopType.Name}");
+            
+            // Get shop configuration
+            var config = await _shopTypeService.GetConfigurationByIdAsync(_viewModel.SelectedShopType.Id);
+            
+            if (config != null)
+            {
+                // Display units
+                UnitsList.ItemsSource = config.Units;
+                
+                // Display categories
+                CategoriesList.ItemsSource = config.Categories;
+                
+                // Show configuration panel
+                ShopConfigExpander.Visibility = Visibility.Visible;
+                
+                Debug.WriteLine($"[Registration] Loaded {config.Units.Count} units and {config.Categories.Count} categories");
+            }
+        }
+        else
+        {
+            // Hide configuration panel
+            ShopConfigExpander.Visibility = Visibility.Collapsed;
+        }
     }
 }

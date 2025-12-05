@@ -59,7 +59,8 @@ public partial class App : Application
                     services.AddSingleton<IModuleService, ModuleService>();
                     services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
                     services.AddScoped<IInventoryService, InventoryService>();
-                    services.AddSingleton<DatabaseService>();
+                    services.AddSingleton<Services.DatabaseService>();
+                    services.AddSingleton<ShopTypeService>();
                     
                     // New Authentication Services
                     services.AddSingleton<IAuthService, AuthService>();
@@ -82,9 +83,11 @@ public partial class App : Application
                 })
                 .Build();
 
+            var serviceProvider = _host.Services;
+
             // Initialize database
-            var databaseService = _host.Services.GetRequiredService<DatabaseService>();
-            await databaseService.InitializeDatabaseAsync().ConfigureAwait(false);
+            var dbService = serviceProvider.GetRequiredService<Services.DatabaseService>();
+            await dbService.InitializeDatabaseAsync().ConfigureAwait(false);
 
             base.OnStartup(e);
         }

@@ -214,6 +214,7 @@ public class AuthenticationService : IAuthenticationService
                 Username = request.Username,
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                PasswordSalt = "", // BCrypt handles salt internally
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 Phone = request.Phone,
