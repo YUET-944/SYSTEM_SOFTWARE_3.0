@@ -60,6 +60,10 @@ public partial class App : Application
                     services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
                     services.AddScoped<IInventoryService, InventoryService>();
                     services.AddSingleton<DatabaseService>();
+                    
+                    // New Authentication Services
+                    services.AddSingleton<IAuthService, AuthService>();
+                    services.AddSingleton<INavigationService, NavigationService>();
 
                     // ViewModels
                     services.AddTransient<LoginViewModel>();
@@ -104,6 +108,15 @@ public partial class App : Application
         if (Current is App app && app._host != null)
         {
             return app._host.Services.GetRequiredService<T>();
+        }
+        throw new InvalidOperationException("Service provider not available");
+    }
+    
+    public static object GetService(Type serviceType)
+    {
+        if (Current is App app && app._host != null)
+        {
+            return app._host.Services.GetRequiredService(serviceType);
         }
         throw new InvalidOperationException("Service provider not available");
     }
