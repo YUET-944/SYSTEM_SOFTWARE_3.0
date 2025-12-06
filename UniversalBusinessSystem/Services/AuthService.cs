@@ -1,17 +1,16 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
-using UniversalBusinessSystem.Data;
-using UniversalBusinessSystem.Core.Entities;
 using Microsoft.EntityFrameworkCore;
+using UniversalBusinessSystem.Core.Entities;
+using UniversalBusinessSystem.Data;
 
 namespace UniversalBusinessSystem.Services
 {
     public interface IAuthService
     {
-        Task<(bool Success, string Message, User User)> RegisterAsync(string username, string email, string password, Guid organizationId, Guid roleId);
-        Task<(bool Success, string Message, User User)> LoginAsync(string username, string password);
+        Task<(bool Success, string Message, User? User)> RegisterAsync(string username, string email, string password, Guid organizationId, Guid roleId);
+        Task<(bool Success, string Message, User? User)> LoginAsync(string username, string password);
         Task<bool> UserExistsAsync(string username, string email, Guid organizationId);
     }
 
@@ -24,21 +23,21 @@ namespace UniversalBusinessSystem.Services
             _context = context;
         }
 
-        public async Task<(bool Success, string Message, User User)> RegisterAsync(string username, string email, string password, Guid organizationId, Guid roleId)
+        public async Task<(bool Success, string Message, User? User)> RegisterAsync(string username, string email, string password, Guid organizationId, Guid roleId)
         {
             try
             {
                 if (await UserExistsAsync(username, email, organizationId))
                     return (false, "User already exists", null);
 
-                var (hash, salt) = CreatePasswordHash(password);
+                var hash = CreatePasswordHash(password);
 
                 var user = new User
                 {
                     Username = username,
                     Email = email,
                     PasswordHash = hash,
-                    PasswordSalt = salt,
+                    PasswordSalt = "", // BCrypt handles salt internally
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true,
                     IsEmailVerified = false,
@@ -58,7 +57,7 @@ namespace UniversalBusinessSystem.Services
             }
         }
 
-        public async Task<(bool Success, string Message, User User)> LoginAsync(string username, string password)
+        public async Task<(bool Success, string Message, User? User)> LoginAsync(string username, string password)
         {
             try
             {
@@ -70,7 +69,7 @@ namespace UniversalBusinessSystem.Services
                 if (!user.IsActive)
                     return (false, "Account is disabled", null);
                 
-                if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
+                if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                     return (false, "Invalid password", null);
                 
                 user.LastLoginAt = DateTime.UtcNow;
@@ -92,20 +91,9 @@ namespace UniversalBusinessSystem.Services
                 (u.Username == username || u.Email == email) && u.OrganizationId == organizationId);
         }
 
-        private (string hash, string salt) CreatePasswordHash(string password)
+        private string CreatePasswordHash(string password)
         {
-            using var hmac = new HMACSHA512();
-            var salt = Convert.ToBase64String(hmac.Key);
-            var hash = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(password)));
-            return (hash, salt);
-        }
-
-        private bool VerifyPasswordHash(string password, string storedHash, string storedSalt)
-        {
-            var saltBytes = Convert.FromBase64String(storedSalt);
-            using var hmac = new HMACSHA512(saltBytes);
-            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(computedHash) == storedHash;
+            return BCrypt.Net.BCrypt.HashPassword(password);
         }
     }
 }
