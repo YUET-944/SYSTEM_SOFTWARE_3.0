@@ -125,7 +125,15 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    document.getElementById('registerSuccess').textContent = 'Registration successful! You can now login.';
+                    // Store token and user info
+                    localStorage.setItem('authToken', data.token);
+                    localStorage.setItem('userInfo', JSON.stringify(data));
+                    
+                    currentUser = data;
+                    showUserInfo();
+                    loadEndpoint('/');
+                    
+                    document.getElementById('registerSuccess').textContent = 'Registration successful! You are now logged in.';
                     document.getElementById('registerError').textContent = '';
                     document.getElementById('registerForm').reset();
                 } else {
@@ -158,7 +166,7 @@
                 
                 if (response.ok) {
                     // Store token and user info
-                    localStorage.setItem('authToken', data.userId.toString());
+                    localStorage.setItem('authToken', data.token);
                     localStorage.setItem('userInfo', JSON.stringify(data));
                     
                     currentUser = data;
@@ -181,7 +189,7 @@
         function showUserInfo() {
             if (currentUser) {
                 document.getElementById('userDetails').textContent = 
-                    `Logged in as: ${currentUser.username} (Store ID: ${currentUser.storeId || 'N/A'})`;
+                    `Logged in as: ${currentUser.username} | Store: ${currentUser.storeName || 'Default Store'}`;
                 document.getElementById('userInfo').style.display = 'block';
                 document.getElementById('authSection').style.display = 'none';
             }

@@ -31,6 +31,7 @@ namespace SystemSoftware.API.Controllers
                     userId = user.Id,
                     username = user.Username,
                     storeId = user.StoreId,
+                    storeName = user.Store?.Name,
                     token = token
                 });
             }
@@ -53,6 +54,7 @@ namespace SystemSoftware.API.Controllers
                     username = user.Username,
                     role = user.Role,
                     storeId = user.StoreId,
+                    storeName = user.Store?.Name,
                     token = token
                 });
             }

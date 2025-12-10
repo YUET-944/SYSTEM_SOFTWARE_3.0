@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SystemSoftware.Core.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
-using System.Linq;
 using SystemSoftware.Core.Models;
 
 namespace SystemSoftware.API.Controllers
@@ -31,7 +29,7 @@ namespace SystemSoftware.API.Controllers
             }
 
             var modules = await _context.Modules
-                .Include(m => m.Measurements.Where(me => me.StoreId == storeId))
+                .Include(m => m.Measurements)
                 .Where(m => m.StoreId == storeId)
                 .ToListAsync();
 
@@ -81,7 +79,7 @@ namespace SystemSoftware.API.Controllers
             }
 
             var activeModules = await _context.Modules
-                .Include(m => m.Measurements.Where(me => me.StoreId == storeId))
+                .Include(m => m.Measurements)
                 .Where(m => m.IsEnabled && m.StoreId == storeId)
                 .ToListAsync();
 

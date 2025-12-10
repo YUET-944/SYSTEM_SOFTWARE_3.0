@@ -17,11 +17,13 @@ namespace SystemSoftware.Core.Services
     {
         private readonly AppDbContext _context;
         private readonly IJwtService _jwtService;
+        private readonly DataSeeder _dataSeeder;
         
-        public AuthService(AppDbContext context, IJwtService jwtService)
+        public AuthService(AppDbContext context, IJwtService jwtService, DataSeeder dataSeeder)
         {
             _context = context;
             _jwtService = jwtService;
+            _dataSeeder = dataSeeder;
         }
 
         public async Task<(User user, string token)> RegisterAsync(string username, string email, string password, string? storeName = null)
@@ -79,6 +81,12 @@ namespace SystemSoftware.Core.Services
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
+            // Load user with store data for response
+            await _context.Entry(user).Reference(u => u.Store).LoadAsync();
+
+            // Seed sample modules for the new store
+            await _dataSeeder.SeedModulesForStore(store.Id);
+
             // Generate JWT token
             var token = _jwtService.GenerateToken(user);
 
@@ -88,6 +96,7 @@ namespace SystemSoftware.Core.Services
         public async Task<(User user, string token)> LoginAsync(string username, string password)
         {
             var user = await _context.Users
+                .Include(u => u.Store)
                 .FirstOrDefaultAsync(u => u.Username == username || u.Email == username);
 
             if (user == null || !VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))

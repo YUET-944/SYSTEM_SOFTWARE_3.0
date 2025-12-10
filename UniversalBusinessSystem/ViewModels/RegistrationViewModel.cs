@@ -54,9 +54,6 @@ public partial class RegistrationViewModel : ObservableObject
     private List<ShopType> _shopTypes = new();
 
     [ObservableProperty]
-    private List<Guid> _selectedUnitIds = new();
-
-    [ObservableProperty]
     private bool _isLoading = false;
 
     [ObservableProperty]
@@ -107,8 +104,7 @@ public partial class RegistrationViewModel : ObservableObject
                 OrganizationName = OrganizationName,
                 OrganizationDescription = OrganizationDescription,
                 OrganizationAddress = OrganizationAddress,
-                ShopTypeId = SelectedShopType?.Id ?? Guid.Empty,
-                SelectedUnitIds = SelectedUnitIds
+                ShopTypeId = SelectedShopType?.Id ?? Guid.Empty
             };
 
             Debug.WriteLine("[Register] Sending request to authentication service");
