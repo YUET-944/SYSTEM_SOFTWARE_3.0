@@ -1,5 +1,6 @@
 using SystemSoftware.Core.Data;
 using SystemSoftware.Core.Services;
+using SystemSoftware.Core.Configuration;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,17 +8,29 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
+// Add HttpContextAccessor
+builder.Services.AddHttpContextAccessor();
+
 // Add Database Context
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add Authentication Service
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+
+// Add JWT configuration
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+builder.Services.Configure<JwtSettings>(jwtSettings);
 
 var app = builder.Build();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// Add authentication middleware
+app.UseMiddleware<SystemSoftware.API.Middleware.AuthMiddleware>();
+
 app.UseAuthorization();
 app.MapControllers();
 

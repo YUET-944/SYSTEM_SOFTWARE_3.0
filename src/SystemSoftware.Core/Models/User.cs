@@ -27,5 +27,12 @@ namespace SystemSoftware.Core.Models
         public DateTime? LastLogin { get; set; }
         public bool IsActive { get; set; }
         public string? Role { get; set; }
+        
+        // Foreign key for Store
+        [Required]
+        public int StoreId { get; set; }
+        
+        // Navigation properties
+        public virtual Store Store { get; set; } = null!;
     }
 }

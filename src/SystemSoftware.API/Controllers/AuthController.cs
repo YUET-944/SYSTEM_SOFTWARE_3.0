@@ -20,15 +20,18 @@ namespace SystemSoftware.API.Controllers
         {
             try
             {
-                var user = await _authService.RegisterAsync(
+                var (user, token) = await _authService.RegisterAsync(
                     request.Username, 
                     request.Email, 
-                    request.Password);
+                    request.Password,
+                    request.StoreName);
                 
                 return Ok(new { 
                     message = "Registration successful", 
                     userId = user.Id,
-                    username = user.Username 
+                    username = user.Username,
+                    storeId = user.StoreId,
+                    token = token
                 });
             }
             catch (Exception ex)
@@ -42,13 +45,15 @@ namespace SystemSoftware.API.Controllers
         {
             try
             {
-                var user = await _authService.LoginAsync(request.Username, request.Password);
+                var (user, token) = await _authService.LoginAsync(request.Username, request.Password);
                 
                 return Ok(new { 
                     message = "Login successful", 
                     userId = user.Id,
                     username = user.Username,
-                    role = user.Role
+                    role = user.Role,
+                    storeId = user.StoreId,
+                    token = token
                 });
             }
             catch (Exception ex)
@@ -63,6 +68,7 @@ namespace SystemSoftware.API.Controllers
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+        public string? StoreName { get; set; }
     }
     
     public class LoginRequest

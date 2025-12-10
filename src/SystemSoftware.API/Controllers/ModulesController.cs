@@ -1,4 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using SystemSoftware.Core.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
+using System.Linq;
+using SystemSoftware.Core.Models;
 
 namespace SystemSoftware.API.Controllers
 {
@@ -6,20 +11,46 @@ namespace SystemSoftware.API.Controllers
     [Route("api/[controller]")]
     public class ModulesController : ControllerBase
     {
-        [HttpGet]
-        public IActionResult Get()
+        private readonly AppDbContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        
+        public ModulesController(AppDbContext context, IHttpContextAccessor httpContextAccessor)
         {
-            var modules = new[]
+            _context = context;
+            _httpContextAccessor = httpContextAccessor;
+        }
+        
+        [HttpGet]
+        public async Task<IActionResult> Get()
+        {
+            // Get store ID from middleware
+            var context = _httpContextAccessor.HttpContext;
+            if (context?.Items["StoreId"] is not int storeId)
             {
-                new { id = 1, name = "User Management", enabled = true, description = "Manage user accounts and permissions" },
-                new { id = 2, name = "Inventory System", enabled = true, description = "Track and manage inventory" },
-                new { id = 3, name = "Reporting", enabled = false, description = "Generate business reports" },
-                new { id = 4, name = "Billing", enabled = true, description = "Handle invoicing and payments" }
-            };
+                return Unauthorized(new { message = "Store information not found" });
+            }
+
+            var modules = await _context.Modules
+                .Include(m => m.Measurements.Where(me => me.StoreId == storeId))
+                .Where(m => m.StoreId == storeId)
+                .ToListAsync();
 
             var response = new
             {
-                data = modules,
+                data = modules.Select(m => new {
+                    id = m.Id,
+                    name = m.Name,
+                    enabled = m.IsEnabled,
+                    description = m.Description,
+                    storeId = m.StoreId,
+                    measurements = m.Measurements.Select(me => new {
+                        id = me.Id,
+                        name = me.Name,
+                        unit = me.Unit,
+                        minValue = me.MinValue,
+                        maxValue = me.MaxValue
+                    }).ToList()
+                }),
                 navigation = new
                 {
                     back = new
@@ -41,18 +72,35 @@ namespace SystemSoftware.API.Controllers
         }
 
         [HttpGet("active")]
-        public IActionResult GetActiveModules()
+        public async Task<IActionResult> GetActiveModules()
         {
-            var activeModules = new[]
+            var context = _httpContextAccessor.HttpContext;
+            if (context?.Items["StoreId"] is not int storeId)
             {
-                new { id = 1, name = "User Management", enabled = true, description = "Manage user accounts and permissions" },
-                new { id = 2, name = "Inventory System", enabled = true, description = "Track and manage inventory" },
-                new { id = 4, name = "Billing", enabled = true, description = "Handle invoicing and payments" }
-            };
+                return Unauthorized(new { message = "Store information not found" });
+            }
+
+            var activeModules = await _context.Modules
+                .Include(m => m.Measurements.Where(me => me.StoreId == storeId))
+                .Where(m => m.IsEnabled && m.StoreId == storeId)
+                .ToListAsync();
 
             var response = new
             {
-                data = activeModules,
+                data = activeModules.Select(m => new {
+                    id = m.Id,
+                    name = m.Name,
+                    enabled = m.IsEnabled,
+                    description = m.Description,
+                    storeId = m.StoreId,
+                    measurements = m.Measurements.Select(me => new {
+                        id = me.Id,
+                        name = me.Name,
+                        unit = me.Unit,
+                        minValue = me.MinValue,
+                        maxValue = me.MaxValue
+                    }).ToList()
+                }),
                 navigation = new
                 {
                     back = new
@@ -68,8 +116,26 @@ namespace SystemSoftware.API.Controllers
         }
 
         [HttpPost("enable/{id}")]
-        public IActionResult EnableModule(int id)
+        public async Task<IActionResult> EnableModule(int id)
         {
+            var context = _httpContextAccessor.HttpContext;
+            if (context?.Items["StoreId"] is not int storeId)
+            {
+                return Unauthorized(new { message = "Store information not found" });
+            }
+
+            var module = await _context.Modules
+                .FirstOrDefaultAsync(m => m.Id == id && m.StoreId == storeId);
+                
+            if (module == null)
+            {
+                return NotFound(new { message = "Module not found or not accessible" });
+            }
+
+            module.IsEnabled = true;
+            module.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
             var response = new
             {
                 message = $"Module {id} enabled successfully",
@@ -88,8 +154,26 @@ namespace SystemSoftware.API.Controllers
         }
 
         [HttpPost("disable/{id}")]
-        public IActionResult DisableModule(int id)
+        public async Task<IActionResult> DisableModule(int id)
         {
+            var context = _httpContextAccessor.HttpContext;
+            if (context?.Items["StoreId"] is not int storeId)
+            {
+                return Unauthorized(new { message = "Store information not found" });
+            }
+
+            var module = await _context.Modules
+                .FirstOrDefaultAsync(m => m.Id == id && m.StoreId == storeId);
+                
+            if (module == null)
+            {
+                return NotFound(new { message = "Module not found or not accessible" });
+            }
+
+            module.IsEnabled = false;
+            module.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
             var response = new
             {
                 message = $"Module {id} disabled successfully",

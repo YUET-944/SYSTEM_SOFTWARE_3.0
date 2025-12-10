@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using UniversalBusinessSystem.ViewModels;
 using System.Diagnostics;
 using System.Reflection;
@@ -181,6 +182,24 @@ public partial class RegistrationWindow : Window
                 ShopConfigExpander.Visibility = Visibility.Visible;
                 
                 Debug.WriteLine($"[Registration] Loaded {config.Units.Count} units and {config.Categories.Count} categories");
+                
+                // Attach event handlers to checkboxes after they're rendered
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    foreach (var item in config.Units)
+                    {
+                        var container = UnitsList.ItemContainerGenerator.ContainerFromItem(item);
+                        if (container is FrameworkElement element)
+                        {
+                            var checkBox = FindVisualChild<CheckBox>(element);
+                            if (checkBox != null)
+                            {
+                                checkBox.Checked += UnitCheckBox_Checked;
+                                checkBox.Unchecked += UnitCheckBox_Unchecked;
+                            }
+                        }
+                    }
+                }), System.Windows.Threading.DispatcherPriority.Background);
             }
         }
         else
@@ -188,5 +207,37 @@ public partial class RegistrationWindow : Window
             // Hide configuration panel
             ShopConfigExpander.Visibility = Visibility.Collapsed;
         }
+    }
+    
+    private void UnitCheckBox_Checked(object sender, RoutedEventArgs e)
+    {
+        if (sender is CheckBox checkBox && checkBox.Tag is Guid unitId)
+        {
+            if (!_viewModel.SelectedUnitIds.Contains(unitId))
+            {
+                _viewModel.SelectedUnitIds.Add(unitId);
+            }
+        }
+    }
+    
+    private void UnitCheckBox_Unchecked(object sender, RoutedEventArgs e)
+    {
+        if (sender is CheckBox checkBox && checkBox.Tag is Guid unitId)
+        {
+            _viewModel.SelectedUnitIds.RemoveAll(id => id == unitId);
+        }
+    }
+    
+    private static T? FindVisualChild<T>(DependencyObject depObj) where T : DependencyObject
+    {
+        if (depObj == null) return null;
+        
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+        {
+            var child = VisualTreeHelper.GetChild(depObj, i);
+            var result = (child as T) ?? FindVisualChild<T>(child);
+            if (result != null) return result;
+        }
+        return null;
     }
 }

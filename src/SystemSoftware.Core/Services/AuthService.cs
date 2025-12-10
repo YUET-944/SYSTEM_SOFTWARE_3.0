@@ -8,25 +8,58 @@ namespace SystemSoftware.Core.Services
 {
     public interface IAuthService
     {
-        Task<User> RegisterAsync(string username, string email, string password);
-        Task<User> LoginAsync(string username, string password);
+        Task<(User user, string token)> RegisterAsync(string username, string email, string password, string? storeName = null);
+        Task<(User user, string token)> LoginAsync(string username, string password);
         Task<bool> UserExistsAsync(string username, string email);
     }
 
     public class AuthService : IAuthService
     {
         private readonly AppDbContext _context;
+        private readonly IJwtService _jwtService;
         
-        public AuthService(AppDbContext context)
+        public AuthService(AppDbContext context, IJwtService jwtService)
         {
             _context = context;
+            _jwtService = jwtService;
         }
 
-        public async Task<User> RegisterAsync(string username, string email, string password)
+        public async Task<(User user, string token)> RegisterAsync(string username, string email, string password, string? storeName = null)
         {
             // Check if user exists
             if (await UserExistsAsync(username, email))
                 throw new Exception("User already exists");
+
+            // Create or find store
+            Store store;
+            if (string.IsNullOrEmpty(storeName))
+            {
+                // Create default store with username
+                storeName = $"{username}'s Store";
+                store = new Store
+                {
+                    Name = storeName,
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                };
+                _context.Stores.Add(store);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                store = await _context.Stores.FirstOrDefaultAsync(s => s.Name == storeName);
+                if (store == null)
+                {
+                    store = new Store
+                    {
+                        Name = storeName,
+                        CreatedAt = DateTime.UtcNow,
+                        IsActive = true
+                    };
+                    _context.Stores.Add(store);
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             // Create password hash
             CreatePasswordHash(password, out byte[] passwordHash, out byte[] passwordSalt);
@@ -39,16 +72,20 @@ namespace SystemSoftware.Core.Services
                 PasswordSalt = passwordSalt,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true,
-                Role = "User"
+                Role = "User",
+                StoreId = store.Id
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return user;
+            // Generate JWT token
+            var token = _jwtService.GenerateToken(user);
+
+            return (user, token);
         }
 
-        public async Task<User> LoginAsync(string username, string password)
+        public async Task<(User user, string token)> LoginAsync(string username, string password)
         {
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == username || u.Email == username);
@@ -60,7 +97,10 @@ namespace SystemSoftware.Core.Services
             user.LastLogin = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            return user;
+            // Generate JWT token
+            var token = _jwtService.GenerateToken(user);
+
+            return (user, token);
         }
 
         public async Task<bool> UserExistsAsync(string username, string email)
